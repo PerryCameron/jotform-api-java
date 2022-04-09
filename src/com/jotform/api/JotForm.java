@@ -9,42 +9,35 @@
 
 package com.jotform.api;
 
-import org.json.*;
-
 import org.apache.http.Header;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
-import org.apache.http.entity.StringEntity;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class JotForm {
 
-    private static String baseUrl = "https://api.jotform.com/";
-    private static String version = "v1";
+    private static final String baseUrl = "https://api.jotform.com/";
+    private static final String version = "v1";
     
-    private String apiKey;
+    private final String apiKey;
     private boolean debugMode;
     
     public JotForm() {
@@ -84,45 +77,50 @@ public class JotForm {
         HttpRequestBase req;
         HttpResponse resp;
 
-        if (method.equals("GET")){
-        	req = new HttpGet(JotForm.baseUrl + JotForm.version + path);
-            req.addHeader("apiKey", this.apiKey);
-            
-            if(params != null) {
-                URI uri = null;
-                URIBuilder ub = new URIBuilder(req.getURI());
-                
-            	Set<String> keys = params.keySet();
-            	for(String key: keys) {
-            		try {
-						uri = ub.addParameter(key,params.get(key)).build();
-					} catch (URISyntaxException e) {
-						e.printStackTrace();
-					}
-            	}
-            	req.setURI(uri);
-            }
-        } else if (method.equals("POST")) {
-            req = new HttpPost(JotForm.baseUrl + JotForm.version + path);
-            req.addHeader("apiKey", this.apiKey);
+        switch (method) {
+            case "GET":
+                req = new HttpGet(JotForm.baseUrl + JotForm.version + path);
+                req.addHeader("apiKey", this.apiKey);
 
-            if (params != null) {
-	            Set<String> keys = params.keySet();
-	            
-	            List<NameValuePair> parameters = new ArrayList<NameValuePair>(params.size());
-	            
-	            for(String key : keys) {
-	            	parameters.add(new BasicNameValuePair(key, params.get(key)));
-	            }
-	            
-	            UrlEncodedFormEntity entity = new UrlEncodedFormEntity(parameters, "UTF-8");
-	            ((HttpPost) req).setEntity(entity);
-            }
-        } else if (method.equals("DELETE")) {
-            req = new HttpDelete(JotForm.baseUrl + JotForm.version + path);
-            req.addHeader("apiKey", this.apiKey);
-        } else {
-        	req = null;
+                if (params != null) {
+                    URI uri = null;
+                    URIBuilder ub = new URIBuilder(req.getURI());
+
+                    Set<String> keys = params.keySet();
+                    for (String key : keys) {
+                        try {
+                            uri = ub.addParameter(key, params.get(key)).build();
+                        } catch (URISyntaxException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    req.setURI(uri);
+                }
+                break;
+            case "POST":
+                req = new HttpPost(JotForm.baseUrl + JotForm.version + path);
+                req.addHeader("apiKey", this.apiKey);
+
+                if (params != null) {
+                    Set<String> keys = params.keySet();
+
+                    List<NameValuePair> parameters = new ArrayList<>(params.size());
+
+                    for (String key : keys) {
+                        parameters.add(new BasicNameValuePair(key, params.get(key)));
+                    }
+
+                    UrlEncodedFormEntity entity = new UrlEncodedFormEntity(parameters, "UTF-8");
+                    ((HttpPost) req).setEntity(entity);
+                }
+                break;
+            case "DELETE":
+                req = new HttpDelete(JotForm.baseUrl + JotForm.version + path);
+                req.addHeader("apiKey", this.apiKey);
+                break;
+            default:
+                req = null;
+                break;
         }
         
         try {
@@ -149,7 +147,7 @@ public class JotForm {
     private JSONObject executeHttpRequest(String path, JSONObject params) throws UnsupportedEncodingException {
     	DefaultHttpClient client = new DefaultHttpClient();
         
-        HttpUriRequest req;
+        HttpPut req;
         HttpResponse resp;
         
     	req = new HttpPut(JotForm.baseUrl + JotForm.version + path);
@@ -158,9 +156,8 @@ public class JotForm {
         if (params != null) {
 			try {
 				StringEntity s = new StringEntity(params.toString());
-	    	    s.setContentEncoding((Header) new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-	    	    HttpEntity entity = s;
-	    	    ((HttpPut) req).setEntity(entity);
+	    	    s.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+                req.setEntity(s);
 			} catch (UnsupportedEncodingException e) {
 				e.printStackTrace();
 			}
@@ -177,7 +174,7 @@ public class JotForm {
             return new JSONObject(readInput(resp.getEntity().getContent()));
 
         } catch (IOException e) {
-        	
+
         } catch (IllegalStateException e) {
 			e.printStackTrace();
 		} catch (JSONException e) {
@@ -196,7 +193,7 @@ public class JotForm {
             out.write(bytes, 0, n);
             n = in.read(bytes);
         }
-        return new String(out.toString());
+        return out.toString();
     }
 
     private JSONObject executeGetRequest(String path, HashMap<String,String> params) {
@@ -236,9 +233,9 @@ public class JotForm {
     }
     
     private HashMap<String, String> createConditions(String offset, String limit, HashMap<String, String> filter, String orderBy) {
-    	HashMap<String, String> params = new HashMap<String, String>();
+    	HashMap<String, String> params = new HashMap<>();
     	
-    	HashMap<String, String> args = new HashMap<String, String>();
+    	HashMap<String, String> args = new HashMap<>();
     	args.put("offset", offset);
     	args.put("limit", limit);
     	args.put("orderby", orderBy);
@@ -251,7 +248,7 @@ public class JotForm {
     	}
     	
     	if(filter != null) {
-    		JSONObject filterObject = new JSONObject((Map)filter);
+    		JSONObject filterObject = new JSONObject(filter);
     		params.put("filter", filterObject.toString());
     	}
     	
@@ -259,14 +256,14 @@ public class JotForm {
     }
     
     private HashMap<String, String> createHistoryQuery(String action, String date, String sortBy, String startDate, String endDate) {
-    	HashMap<String, String> args = new HashMap<String, String>();
+    	HashMap<String, String> args = new HashMap<>();
     	args.put("action", action);
     	args.put("date", date);
     	args.put("sortBy", sortBy);
     	args.put("startDate", startDate);
     	args.put("endDate", endDate);
     	
-    	HashMap<String, String> params = new HashMap<String, String>();
+    	HashMap<String, String> params = new HashMap<>();
     	
     	Set<String> keys = args.keySet();
     	for(String key: keys) {
@@ -458,7 +455,7 @@ public class JotForm {
      * @return Returns posted submission ID and URL.
      */
     public JSONObject createFormSubmission(long formID, HashMap<String, String> submission) {
-    	HashMap<String, String> parameters = new HashMap<String, String>();
+    	HashMap<String, String> parameters = new HashMap<>();
     	
     	Set<String> keys = submission.keySet();
     	
@@ -509,7 +506,7 @@ public class JotForm {
      */
     public JSONObject createFormWebhook(long formID, String webhookURL) {
     	
-    	HashMap<String,String> params = new HashMap<String,String>();
+    	HashMap<String,String> params = new HashMap<>();
     	params.put("webhookURL", webhookURL);
     	
     	return executePostRequest("/form/" + formID + "/webhooks", params);
@@ -606,7 +603,7 @@ public class JotForm {
      * @return Returns status of request.
      */
     public JSONObject editSubmission(long sid, HashMap<String, String> submission ) {
-    	HashMap<String, String> parameters = new HashMap<String, String>();
+    	HashMap<String, String> parameters = new HashMap<>();
     	
     	Set<String> keys = submission.keySet();
     	
@@ -647,7 +644,7 @@ public class JotForm {
      * @return Returns properties of new question.
      */
     public JSONObject createFormQuestion(long formID, HashMap<String, String> question ) {
-    	HashMap<String, String> params = new HashMap<String, String>();
+    	HashMap<String, String> params = new HashMap<>();
     	
     	Set<String> keys = question.keySet();
     	
@@ -676,7 +673,7 @@ public class JotForm {
      * @return Returns edited property and type of question.
      */
     public JSONObject editFormQuestion(long formID, long qid, HashMap<String, String> questionProperties ) {
-    	HashMap<String, String> question = new HashMap<String, String>();
+    	HashMap<String, String> question = new HashMap<>();
     	
     	Set<String> keys = questionProperties.keySet();
     	
@@ -694,7 +691,7 @@ public class JotForm {
      * @return Returns edited properties.
      */
     public JSONObject setFormProperties(long formID, HashMap<String, String> formProperties) {
-    	HashMap<String, String> properties = new HashMap<String, String>();
+    	HashMap<String, String> properties = new HashMap<>();
     	
     	Set<String> keys = formProperties.keySet();
     	
