@@ -2,19 +2,15 @@ package org.json;
 
 /*
 Copyright (c) 2006 JSON.org
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
-
 The Software shall be used for Good, not Evil.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -50,11 +46,11 @@ import java.io.StringWriter;
  * <p>
  * The first method called must be <code>array</code> or <code>object</code>.
  * There are no methods for adding commas or colons. JSONStringer adds them for
- * you. Objects and arrays can be nested up to 20 levels deep.
+ * you. Objects and arrays can be nested up to 200 levels deep.
  * <p>
  * This can sometimes be easier than using a JSONObject to build a string.
  * @author JSON.org
- * @version 2008-09-18
+ * @version 2015-12-09
  */
 public class JSONStringer extends JSONWriter {
     /**
@@ -72,6 +68,7 @@ public class JSONStringer extends JSONWriter {
      * <code>endArray</code>).
      * @return The JSON text.
      */
+    @Override
     public String toString() {
         return this.mode == 'd' ? this.writer.toString() : null;
     }

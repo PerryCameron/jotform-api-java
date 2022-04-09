@@ -1,3 +1,5 @@
 bin/
 src/com/jotform/api/.DS_Store
 .DS_Store
+jotform-api-java.iml
+.idea
