@@ -81,7 +81,7 @@ public class JotForm {
     private JSONObject executeHttpRequest(String path, HashMap<String,String> params, String method) throws UnsupportedEncodingException {
         DefaultHttpClient client = new DefaultHttpClient();
         
-        HttpUriRequest req;
+        HttpRequestBase req;
         HttpResponse resp;
 
         if (method.equals("GET")){
@@ -100,7 +100,7 @@ public class JotForm {
 						e.printStackTrace();
 					}
             	}
-            	((HttpRequestBase) req).setURI(uri);
+            	req.setURI(uri);
             }
         } else if (method.equals("POST")) {
             req = new HttpPost(JotForm.baseUrl + JotForm.version + path);
